@@ -97,10 +97,10 @@ mydb = mysql.connector.connect(
 )
 '''
 mydb = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    passwd="",
-    database="jmzv13_twitter",
+    host=setting.MYSQL_HOST,
+    user=setting.MYSQL_USER,
+    passwd=setting.MYSQL_PASSWORD,
+    database=setting.MYSQL_DATABASE,
     charset = 'utf8'
 )
 
