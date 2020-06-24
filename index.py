@@ -161,7 +161,7 @@ def generate_graph1_data():
     time_interval_before = timedelta(hours=0, minutes=0, seconds=g_update_interval_time)
 
     time_interval = (time_now - time_interval_before).strftime('%Y-%m-%d %H:%M:%S')
-    query = "SELECT SUM(IF(polarity=-1, 1, 0)) AS negative, SUM(IF(polarity=0, 1, 0)) AS neutral, SUM(IF(polarity=1, 1, 0)) AS positive FROM {} WHERE created_at >= '{}' ".format(settings.TABLE_NAME, time_interval)
+    query = "SELECT SUM(IF(polarity=-1, -1, 0)) AS negative, SUM(IF(polarity=0, 1, 0)) AS neutral, SUM(IF(polarity=1, 1, 0)) AS positive FROM {} WHERE created_at >= '{}' ".format(settings.TABLE_NAME, time_interval)
 
     #print(query)
 
@@ -175,7 +175,7 @@ def generate_graph1_data():
     end = time.time()
     elapsed = end - start
 
-    print(graph_data)
+    #print(graph_data)
     
     g_graph1_data["x_axis"].append(time_now.strftime('%H:%M:%S'))
     g_graph1_data["y_negative"].append(graph_data[0][0])
@@ -190,10 +190,10 @@ generate_graph1_data()
 # for line chart
 fig = go.Figure()
 
-fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_positive"]), mode='lines', name='Positive'))
+fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_positive"]), mode='lines', name='Positive', line_color='rgba(255,0,0,0)'))
 
-fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_neutral"]), mode='lines', name='Neutral'))
-fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_negative"]), mode='lines', name='Negative'))
+fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_neutral"]), mode='lines', name='Neutral', line_color='rgba(255,255,0,0)'))
+fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_negative"]), mode='lines', name='Negative', line_color='rgba(0,0,255,0)'))
 
 fig.update_layout(  margin={"r": 20, "t": 50, "l": 20, "b": 50}, 
                     width=400,
@@ -276,7 +276,7 @@ def update_graph_scatter(input_data):
                     yaxis_title_text="", 
                     title_x=0.05, 
                     yaxis_gridcolor='#eee',  
-                    yaxis=dict(range=[0,100]),
+                    yaxis=dict(range=[-10,100]),
                     # , title_y=0.95
                     xaxis_title_text='', 
                     showlegend=True, 
