@@ -7,15 +7,24 @@ import random
 import plotly.graph_objects as go
 from collections import deque
 
+from datetime import datetime, timedelta
+
+time_now = datetime.utcnow().strftime('%H:%M:%S')
 X = deque(maxlen=20)
-X.append(1)
+X.append(time_now)
 Y = deque(maxlen=20)
 Y.append(1)
 
 fig = go.Figure()
 
 fig.add_trace(go.Scatter(x=list(X), y=list(Y), mode='lines', name='Positive'))
-
+fig.update_layout(
+    xaxis = dict(
+        tickmode = 'array',
+        tickvals = list(X),
+        ticktext = list(X)
+    )
+)
 
 app = dash.Dash(__name__)
 app.layout = html.Div(
@@ -31,10 +40,11 @@ app.layout = html.Div(
 @app.callback(Output('live-graph', 'figure'),
               [Input('graph-update', 'n_intervals')])
 def update_graph_scatter(input_data):
-    X.append(X[-1]+1)
+    time_now = datetime.utcnow().strftime('%H:%M:%S')
+    X.append(time_now)
     Y.append(Y[-1]+Y[-1]*random.uniform(-0.1,0.1))
 
-
+    print(list(X))
     data = plotly.graph_objs.Scatter(
             x=list(X),
             y=list(Y),
@@ -42,8 +52,18 @@ def update_graph_scatter(input_data):
             mode= 'lines+markers'
             )
 
-    return {'data': [data],'layout' : go.Layout(xaxis=dict(range=[min(X),max(X)]),
-                                                yaxis=dict(range=[min(Y),max(Y)]),)}
+    return {'data': [data],'layout' : go.Layout(
+                xaxis = dict(
+                    tickmode = 'array',
+                    tickvals = list(X),
+                    ticktext = list(X)
+                ),
+                yaxis=dict(range=[min(Y),max(Y)]),
+                transition={
+                    'duration': 500,
+                    'easing': 'cubic-in-out'
+                }
+            )}
     
 
 

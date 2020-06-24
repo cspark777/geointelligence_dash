@@ -66,11 +66,6 @@ app.title = 'GeoIntelligence'
 server = app.server
 app.config.suppress_callback_exceptions = True
 
-cache = Cache(app.server, config={
-'CACHE_TYPE': 'simple'
-})
-
-cache.clear()
 
 #config
 
@@ -231,13 +226,17 @@ fig.update_layout(  margin={"r": 20, "t": 50, "l": 20, "b": 50},
                     legend_font_size=14, 
                     legend=dict(x=.1, y=-.2),
                     legend_orientation="h",
-                    xaxis_tickmode = 'array',
-                    #xaxis_type="log",
-                    #xaxis_showspikes=True,
-                    #xaxis_spikethickness=2, 
-                    #yaxis_showspikes=True, 
-                    #yaxis_spikethickness=2,
-                    #yaxis_tickformat=".0%",
+                    xaxis = dict(
+                        tickmode = 'array',
+                        tickvals = list(g_graph1_data["x_axis"]),
+                        ticktext = list(g_graph1_data["x_axis"])
+                    ),
+                    yaxis=dict(range=[min(g_graph1_data["y_negative"]),max(g_graph1_data["y_positive"])]),
+                    transition={
+                        'duration': 500,
+                        'easing': 'cubic-in-out'
+                    }
+                    
                     ) 
 
 
@@ -260,7 +259,6 @@ blogs_section = dbc.Container([
         dbc.Col([
             dcc.Graph(id='live-graph', figure=fig, config=config, animate=True),
             dcc.Graph(id='live-graph_pie', figure=fig_pie, config=config, animate=True),
-
             dcc.Interval(
                 id='graph-update',
                 interval=g_update_interval_time * 1000
@@ -306,13 +304,16 @@ def update_graph_scatter(input_data):
                     legend_font_size=14, 
                     legend=dict(x=.1, y=-.3),
                     legend_orientation="h",
-                    xaxis_tickmode = 'array',
-                    #xaxis_showspikes=True,
-                    #xaxis_spikethickness=2, 
-                    #xaxis=dict(range=[g_graph1_data["x_axis"][0],g_graph1_data["x_axis"][-1]]),
-                    #yaxis_showspikes=True, 
-                    #yaxis_spikethickness=2,
-                    #yaxis_tickformat=".0%",
+                    xaxis = dict(
+                        tickmode = 'array',
+                        tickvals = list(g_graph1_data["x_axis"]),
+                        ticktext = list(g_graph1_data["x_axis"])
+                    ),
+                    yaxis=dict(range=[min(g_graph1_data["y_negative"]),max(g_graph1_data["y_positive"])]),
+                    transition={
+                        'duration': 500,
+                        'easing': 'cubic-in-out'
+                    }
                     ) 
 
     labels = ['Positive', 'Neutral', 'Negative']
