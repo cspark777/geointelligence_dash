@@ -24,10 +24,10 @@ import settings
 from backend import post
 
 mydb = mysql.connector.connect(
-    host=setting.MYSQL_HOST,
-    user=setting.MYSQL_USER,
-    passwd=setting.MYSQL_PASSWORD,
-    database=setting.MYSQL_DATABASE,
+    host=settings.MYSQL_HOST,
+    user=settings.MYSQL_USER,
+    passwd=settings.MYSQL_PASSWORD,
+    database=settings.MYSQL_DATABASE,
     charset = 'utf8'
 )
 

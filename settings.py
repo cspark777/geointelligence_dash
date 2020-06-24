@@ -8,7 +8,7 @@ TABLE_ATTRIBUTES = "id_str VARCHAR(255), created_at DATETIME, text VARCHAR(768),
 
 MYSQL_HOST = "localhost"
 MYSQL_USER = "root"
-MYSQL_PASSWORD = "password"
+MYSQL_PASSWORD = "password123ok"
 MYSQL_DATABASE = "twitter"
 
 '''

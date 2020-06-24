@@ -48,9 +48,6 @@ class MyStreamListener(tweepy.StreamListener):
         retweet_count = status.retweet_count
         favorite_count = status.favorite_count
         
-        print("--------------")
-        print(status.text)
-        print("Long: {}, Lati: {}".format(longitude, latitude))
         
         # Store all data in MySQL
         if mydb.is_connected():
