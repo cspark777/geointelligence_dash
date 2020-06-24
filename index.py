@@ -3,6 +3,7 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
+from flask_caching import Cache
 from dash.dependencies import Input, Output, State, ClientsideFunction
 import pandas as pd
 import plotly_express as px
@@ -54,6 +55,9 @@ app = dash.Dash(__name__,
                            {'http-equiv': 'X-UA-Compatible', 'content': 'IE=edge'},
                            {'name': "author", 'content': "Alban Tranchard"},
                            {'charset': "UTF-8"},
+                           {'http-equiv': 'cache-control', 'content':'no-cache'},
+                           {'http-equiv': 'expires',  'content': '0'},
+                           {'http-equiv': 'pragma', 'content':'no-cache'}
                            ],
 
                 )
@@ -62,13 +66,22 @@ app.title = 'GeoIntelligence'
 server = app.server
 app.config.suppress_callback_exceptions = True
 
+cache = Cache(app.server, config={
+'CACHE_TYPE': 'simple'
+})
+
+cache.clear()
 
 #config
 
 g_update_interval_time = 10 #10 sec
 g_x_axis_count = 30
 
-g_graph1_data = {'x_axis': deque(maxlen=g_x_axis_count), 'y_positive': deque(maxlen=g_x_axis_count), 'y_negative': deque(maxlen=g_x_axis_count), 'y_neutral': deque(maxlen=g_x_axis_count)}
+g_graph1_data = {'x_axis': deque(maxlen=g_x_axis_count), 
+                'y_positive': deque(maxlen=g_x_axis_count), 
+                'y_negative': deque(maxlen=g_x_axis_count), 
+                'y_neutral': deque(maxlen=g_x_axis_count),
+                'y_negative_pie': deque(maxlen=g_x_axis_count)}
 
 config = {'modeBarButtonsToRemove': ['pan2d', 'select2d', 'lasso2d', 'zoomOut2d', 
                   'zoomIn2d', 'hoverClosestCartesian', 'zoom2d', 
@@ -161,7 +174,7 @@ def generate_graph1_data():
     time_interval_before = timedelta(hours=0, minutes=0, seconds=g_update_interval_time)
 
     time_interval = (time_now - time_interval_before).strftime('%Y-%m-%d %H:%M:%S')
-    query = "SELECT SUM(IF(polarity=-1, -1, 0)) AS negative, SUM(IF(polarity=0, 1, 0)) AS neutral, SUM(IF(polarity=1, 1, 0)) AS positive FROM {} WHERE created_at >= '{}' ".format(settings.TABLE_NAME, time_interval)
+    query = "SELECT SUM(IF(polarity=-1, 1, 0)) AS negative, SUM(IF(polarity=0, 1, 0)) AS neutral, SUM(IF(polarity=1, 1, 0)) AS positive FROM {} WHERE created_at >= '{}' ".format(settings.TABLE_NAME, time_interval)
 
     #print(query)
 
@@ -175,10 +188,15 @@ def generate_graph1_data():
     end = time.time()
     elapsed = end - start
 
-    #print(graph_data)
+    if graph_data[0][0] is None:
+        #graph_data[0] = (10, 70, 10)
+        graph_data[0] = (0, 0, 0)
+
+    print(graph_data)
     
     g_graph1_data["x_axis"].append(time_now.strftime('%H:%M:%S'))
-    g_graph1_data["y_negative"].append(graph_data[0][0])
+    g_graph1_data["y_negative"].append(-graph_data[0][0])
+    g_graph1_data["y_negative_pie"].append(graph_data[0][0])
     g_graph1_data["y_neutral"].append(graph_data[0][1])
     g_graph1_data["y_positive"].append(graph_data[0][2])
 
@@ -190,10 +208,10 @@ generate_graph1_data()
 # for line chart
 fig = go.Figure()
 
-fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_positive"]), mode='lines', name='Positive', line_color='rgba(255,0,0,0)'))
+fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_positive"]), mode='lines', name='Positive', line_color='rgb(255,0,0)'))
 
-fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_neutral"]), mode='lines', name='Neutral', line_color='rgba(255,255,0,0)'))
-fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_negative"]), mode='lines', name='Negative', line_color='rgba(0,0,255,0)'))
+fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_neutral"]), mode='lines', name='Neutral', line_color='rgb(255,255,0)'))
+fig.add_trace(go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_negative"]), mode='lines', name='Negative', line_color='rgb(0,0,255)'))
 
 fig.update_layout(  margin={"r": 20, "t": 50, "l": 20, "b": 50}, 
                     width=400,
@@ -203,6 +221,7 @@ fig.update_layout(  margin={"r": 20, "t": 50, "l": 20, "b": 50},
                     title_font_size=20,
                     yaxis_title_text="", 
                     title_x=0.05, 
+                    yaxis=dict(range=[-10,100]),
                     yaxis_gridcolor='#eee',  
                     # , title_y=0.95
                     xaxis_title_text='', 
@@ -212,8 +231,10 @@ fig.update_layout(  margin={"r": 20, "t": 50, "l": 20, "b": 50},
                     legend_font_size=14, 
                     legend=dict(x=.1, y=-.2),
                     legend_orientation="h",
-                    xaxis_showspikes=True,
-                    xaxis_spikethickness=2, 
+                    xaxis_tickmode = 'array',
+                    #xaxis_type="log",
+                    #xaxis_showspikes=True,
+                    #xaxis_spikethickness=2, 
                     #yaxis_showspikes=True, 
                     #yaxis_spikethickness=2,
                     #yaxis_tickformat=".0%",
@@ -222,7 +243,7 @@ fig.update_layout(  margin={"r": 20, "t": 50, "l": 20, "b": 50},
 
 #pie chart
 labels = ['Positive', 'Neutral', 'Negative']
-values = [g_graph1_data["y_positive"][-1], g_graph1_data["y_neutral"][-1], g_graph1_data["y_negative"][-1]]
+values = [g_graph1_data["y_positive"][-1], g_graph1_data["y_neutral"][-1], g_graph1_data["y_negative_pie"][-1]]
 
 fig_pie = go.Figure(data=[go.Pie(labels=labels, values=values)])
 
@@ -255,16 +276,16 @@ def update_graph_scatter(input_data):
     global g_graph1_data
     # Create traces    
     
-    data0 = go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_positive"]), mode='lines', name='Positive')
+    data0 = go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_positive"]), mode='lines', name='Positive', line_color='rgb(255,0,0)')
     
-    data1 = go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_neutral"]), mode='lines', name='Neutral')
-    data2 = go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_negative"]), mode='lines', name='Negative')
+    data1 = go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_neutral"]), mode='lines', name='Neutral', line_color='rgb(255,255,0)')
+    data2 = go.Scatter(x=list(g_graph1_data["x_axis"]), y=list(g_graph1_data["y_negative"]), mode='lines', name='Negative', line_color='rgb(0,0,255)')
     
     print("-----")
-    print(list(g_graph1_data["x_axis"]))
+    #print(list(g_graph1_data["x_axis"]))
 
-    min_arr = [min(g_graph1_data["y_negative"]), min(g_graph1_data["y_neutral"]), min(g_graph1_data["y_positive"])]
-    max_arr = [max(g_graph1_data["y_negative"]), max(g_graph1_data["y_neutral"]), max(g_graph1_data["y_positive"])]
+    #min_arr = [min(g_graph1_data["y_negative"]), min(g_graph1_data["y_neutral"]), min(g_graph1_data["y_positive"])]
+    #max_arr = [max(g_graph1_data["y_negative"]), max(g_graph1_data["y_neutral"]), max(g_graph1_data["y_positive"])]
 
     layout = go.Layout(  
                     margin={"r": 20, "t": 50, "l": 20, "b": 50}, 
@@ -280,14 +301,15 @@ def update_graph_scatter(input_data):
                     # , title_y=0.95
                     xaxis_title_text='', 
                     showlegend=True, 
-                    autosize=True,
+                    autosize=False,
                     legend_title="", 
                     legend_font_size=14, 
                     legend=dict(x=.1, y=-.3),
                     legend_orientation="h",
-                    xaxis_showspikes=True,
-                    xaxis_spikethickness=2, 
-                    xaxis=dict(range=[g_graph1_data["x_axis"][0],g_graph1_data["x_axis"][-1]]),
+                    xaxis_tickmode = 'array',
+                    #xaxis_showspikes=True,
+                    #xaxis_spikethickness=2, 
+                    #xaxis=dict(range=[g_graph1_data["x_axis"][0],g_graph1_data["x_axis"][-1]]),
                     #yaxis_showspikes=True, 
                     #yaxis_spikethickness=2,
                     #yaxis_tickformat=".0%",
