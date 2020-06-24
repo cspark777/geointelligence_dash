@@ -174,6 +174,7 @@ def generate_graph1_data():
 
     end = time.time()
     elapsed = end - start
+    print(graph_data)
 
     g_graph1_data["x_axis"].append(time_now.strftime('%H:%M:%S'))
     g_graph1_data["y_negative"].append(graph_data[0][1])
