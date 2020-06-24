@@ -161,7 +161,7 @@ def generate_graph1_data():
     time_interval_before = timedelta(hours=0, minutes=0, seconds=g_update_interval_time)
 
     time_interval = (time_now - time_interval_before).strftime('%Y-%m-%d %H:%M:%S')
-    query = "SELECT polarity, COUNT(polarity) as cc FROM {} WHERE created_at >= '{}' GROUP BY polarity".format(settings.TABLE_NAME, time_interval)
+    query = "SELECT SUM(IF(polarity=-1, 1, 0)) AS negative, SUM(IF(polarity=0, 1, 0)) AS neutral, SUM(IF(polarity=1, 1, 0)) AS positive FROM {} WHERE created_at >= '{}' GROUP BY polarity".format(settings.TABLE_NAME, time_interval)
 
     #print(query)
 
@@ -175,6 +175,8 @@ def generate_graph1_data():
     end = time.time()
     elapsed = end - start
 
+    print(graph_data)
+    
     g_graph1_data["x_axis"].append(time_now.strftime('%H:%M:%S'))
     g_graph1_data["y_negative"].append(graph_data[0][1])
     g_graph1_data["y_neutral"].append(graph_data[1][1])
